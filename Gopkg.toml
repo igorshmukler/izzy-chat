@@ -36,3 +36,6 @@
 [[constraint]]
   branch = "master"
   name = "github.com/denisenkom/go-mssqldb"
+
+[metadata.heroku]
+  root-package = "github.com/igorshmukler/izzy-chat"
