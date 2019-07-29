@@ -6,15 +6,13 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 
 	mssql "github.com/denisenkom/go-mssqldb"
 	"golang.org/x/net/websocket"
 )
 
 var (
-	herokuPort string
-	port       = flag.String("port", "9000", "port used for ws connection")
+	port = flag.String("port", "8080", "port used for ws connection")
 )
 
 func server(port string) error {
@@ -37,7 +35,6 @@ func server(port string) error {
 }
 
 func main() {
-	herokuPort = os.Getenv("PORT")
 	flag.Parse()
 	log.Fatal(server(*port))
 }
