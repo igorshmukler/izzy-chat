@@ -143,6 +143,14 @@ func messageToArrayBuffer(m *Message) []byte {
 		opcode = 12
 	case "api.channels.direct":
 		opcode = 13
+	case "api.user.signup":
+		opcode = 14
+	case "api.user.created":
+		opcode = 15
+	case "api.user.online":
+		opcode = 16
+	case "api.user.count":
+		opcode = 17
 	default:
 		fmt.Println("Unsupported message type: ", m.MessageType)
 		return make([]byte, 0)
@@ -202,6 +210,14 @@ func arrayBufferToMessage(p *[]byte, m *Message) {
 		m.MessageType = "api.message.archive"
 	case 13:
 		m.MessageType = "api.channels.direct"
+	case 14:
+		m.MessageType = "api.user.signup"
+	case 15:
+		m.MessageType = "api.user.created"
+	case 16:
+		m.MessageType = "api.user.online"
+	case 17:
+		m.MessageType = "api.user.count"
 	default:
 		fmt.Println("unrecognized message format, opcode: ", opcode)
 		return
@@ -336,7 +352,7 @@ func handler(ws *websocket.Conn, h *Hub) {
 				Recepient:   m.Username,
 				Payload:     m.Payload}
 		case "api.message.history":
-			fmt.Println("api.message.history for channel: ", m.Payload)
+			// fmt.Println("api.message.history for channel: ", m.Payload)
 			if !isAuthorized(h, token, m.Username) {
 				fmt.Println("api.message.history: missing a valid token.")
 				return
@@ -364,6 +380,40 @@ func handler(ws *websocket.Conn, h *Hub) {
 				MessageType: "api.channels.created",
 				Recepient:   m.Username,
 				Payload:     m.Payload}
+		case "api.user.signup":
+			fmt.Println("api.user.signup payload: " + m.Payload)
+			var payload map[string]interface{}
+			err := json.Unmarshal([]byte(m.Payload), &payload)
+			if err != nil {
+				fmt.Printf("Error unmarshaling: %v - %v\n", []byte(m.Payload), err)
+				return
+			}
+			fmt.Printf("Email: %v Hash %v\n", payload["email"], payload["passwordHash"])
+			email := fmt.Sprintf("%v", payload["email"])
+			passwordHash := fmt.Sprintf("%v", payload["passwordHash"])
+			err = createNewUser(h, m.Username, email, passwordHash)
+			if err != nil {
+				fmt.Println("error creating user: ", m.Username)
+				return
+			}
+			err = websocket.Message.Send(ws, messageToArrayBuffer(&Message{
+				Username:    "system",
+				MessageType: "api.user.created",
+				Recepient:   m.Username,
+				Payload:     "signup success"}))
+			if err != nil {
+				fmt.Println("Error sending signup success message: ", err)
+				return
+			}
+		case "api.user.online":
+			fmt.Println("api.user.online stub")
+			count := len(h.clients)
+			fmt.Printf("found %v connected clients", count)
+			h.broadcastChan <- Message{
+				Username:    "system",
+				MessageType: "api.user.count",
+				Recepient:   m.Username,
+				Payload:     fmt.Sprintf("%v", count)}
 		default:
 			fmt.Println("unrecognized message format. type: ", m.MessageType)
 			if isAuthorized(h, token, m.Username) {

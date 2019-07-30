@@ -25,7 +25,7 @@ func randStringRunes(n int) string {
 func findSessionToken(h *Hub, username string) string {
 	res := ""
 	selectUserSql := fmt.Sprintf("SELECT Token FROM dbo.Sessions WHERE Username = '%v'", username)
-	fmt.Println("selectUserSql: ", selectUserSql)
+	// fmt.Println("selectUserSql: ", selectUserSql)
 	rows, err := h.dbConnection.Query(selectUserSql)
 	if err != nil {
 		log.Println(err)
@@ -38,7 +38,7 @@ func findSessionToken(h *Hub, username string) string {
 			fmt.Println(err)
 			return res
 		}
-		fmt.Printf("found session token %v for user: %v\n", token, username)
+		// fmt.Printf("found session token: %v for user: %v\n", token, username)
 		res = token
 	}
 	return res
@@ -53,12 +53,22 @@ func setSessionToken(h *Hub, username string) string {
 	// generate a new token
 	token = randStringRunes(20)
 	insertMessageSql := fmt.Sprintf("INSERT INTO dbo.Sessions VALUES('%v', '%v')", username, token)
-	fmt.Println("insert statement: ", insertMessageSql)
+	// fmt.Println("insert statement: ", insertMessageSql)
 	_, err := h.dbConnection.Exec(insertMessageSql)
 	if err != nil {
 		fmt.Println(err)
 	}
 	return token
+}
+
+func createNewUser(h *Hub, username string, email string, passwordHash string) error {
+	insertUserSql := fmt.Sprintf("INSERT INTO dbo.Users VALUES('%v', '%v', '%v')", username, passwordHash, email)
+	fmt.Println("insert statement: ", insertUserSql)
+	_, err := h.dbConnection.Exec(insertUserSql)
+	if err != nil {
+		fmt.Println(err)
+	}
+	return err
 }
 
 // store and check session token
@@ -102,7 +112,7 @@ func getUserChannels(h *Hub, username string) []string /*, error*/ {
 	// XXX
 	// ChannelType == 0 means public channel, available to everyone
 	selectChannelsSql := fmt.Sprintf("SELECT DISTINCT dbo.Channels.Id, FriendlyName FROM dbo.Channels, dbo.Users, dbo.ChannelMembers WHERE (Username = '%v' AND dbo.Users.Id = UserId AND dbo.Channels.Id = ChannelId) OR ChannelType = 0", username)
-	fmt.Println("select statement: ", selectChannelsSql)
+	// fmt.Println("select statement: ", selectChannelsSql)
 	rows, err := h.dbConnection.Query(selectChannelsSql)
 	if err != nil {
 		log.Println(err)
@@ -140,7 +150,7 @@ func archiveExistingChannel(h *Hub, username string, channel string) error {
 func getChannelMembers(h *Hub, channel string) []string {
 	res := make([]string, 0)
 	selectMembersSql := fmt.Sprintf("SELECT dbo.Channels.Id, FriendlyName, Username FROM dbo.Channels, dbo.Users, dbo.ChannelMembers WHERE FriendlyName = '%v' AND dbo.Users.Id = UserId AND dbo.Channels.Id = ChannelId", channel)
-	fmt.Println("select statement: ", selectMembersSql)
+	// fmt.Println("select statement: ", selectMembersSql)
 	rows, err := h.dbConnection.Query(selectMembersSql)
 	if err != nil {
 		log.Println(err)
@@ -162,7 +172,7 @@ func getChannelMembers(h *Hub, channel string) []string {
 func getMessageHistory(h *Hub, channel string) []Message /*, error*/ {
 	res := []Message{}
 	selectMessagesHistorySql := fmt.Sprintf("SELECT Id, Username, Payload FROM dbo.Messages WHERE Recepient = '%v' ORDER BY Stamp", channel)
-	fmt.Println("select statement: ", selectMessagesHistorySql)
+	// fmt.Println("select statement: ", selectMessagesHistorySql)
 	rows, err := h.dbConnection.Query(selectMessagesHistorySql)
 	if err != nil {
 		log.Println(err)
@@ -183,7 +193,7 @@ func getMessageHistory(h *Hub, channel string) []Message /*, error*/ {
 
 func ensureDirectChannel(h *Hub, username string, counterparty string) error {
 	selectDirectChannelSql := fmt.Sprintf("SELECT dbo.Channels.Id FROM dbo.Channels, dbo.Users u, dbo.Users c, dbo.ChannelMembers um, dbo.ChannelMembers cm WHERE ChannelType = 1 AND dbo.Channels.Id = cm.ChannelId AND dbo.Channels.Id = um.ChannelId AND u.Username = '%v' AND c.Username = '%v' AND u.Id = um.UserId AND c.Id = cm.UserId", username, counterparty)
-	fmt.Println("select statement: ", selectDirectChannelSql)
+	// fmt.Println("select statement: ", selectDirectChannelSql)
 	res, err := h.dbConnection.Exec(selectDirectChannelSql)
 	if err != nil {
 		log.Println(err)
@@ -253,7 +263,7 @@ func addUserToChannel(h *Hub, channel string, username string, channelType int) 
 
 func usernameToId(h *Hub, username string) int {
 	selectUserIdSql := fmt.Sprintf("SELECT Id FROM dbo.Users WHERE Username = '%v'", username)
-	fmt.Println("select statement: ", selectUserIdSql)
+	// fmt.Println("select statement: ", selectUserIdSql)
 	rows, err := h.dbConnection.Query(selectUserIdSql)
 	if err != nil {
 		log.Println(err)

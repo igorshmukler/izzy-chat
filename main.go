@@ -18,7 +18,7 @@ var (
 func server(port string) error {
 	mux := http.NewServeMux()
 
-	connector, err := mssql.NewConnector("server=sql5042.site4now.net;user id=DB_A4BD1C_izzy_admin;password=P@55w0rd;database=DB_A4BD1C_izzy;")
+	connector, err := mssql.NewConnector("server=mssql.site.net;user id=izzy;password=P@55w0rd;database=izzy;")
 	if err != nil {
 		log.Panic("Error opening db:", err.Error())
 	}
